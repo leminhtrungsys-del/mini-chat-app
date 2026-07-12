@@ -1,44 +1,41 @@
 import 'dart:convert';
-import 'dart:typed_data';
-import 'package:crypto/crypto.dart';
-import 'package:encrypt/encrypt.dart' as enc;
+import 'package:cryptography/cryptography.dart';
 
-/// LƯU Ý QUAN TRỌNG VỀ E2EE:
-/// Đây là bản MÔ PHỎNG mã hóa đầu-cuối để demo cho mục đích học tập.
-/// Khóa AES được suy ra (derive) trực tiếp từ chatId bằng SHA-256, nghĩa là
-/// bất kỳ ai biết chatId (kể cả server Firestore nếu bị xâm nhập) đều có thể
-/// tính lại được khóa. Đây KHÔNG phải E2EE thực sự vì khóa không nằm độc
-/// quyền trên thiết bị người dùng.
-///
-/// Để nâng cấp lên E2EE thật:
-/// 1. Mỗi thiết bị tự sinh cặp khóa ECDH (X25519) khi cài đặt lần đầu,
-///    khóa riêng tư (private key) KHÔNG BAO GIỜ rời khỏi thiết bị.
-/// 2. Trao đổi khóa công khai (public key) qua server, mỗi bên tự tính ra
-///    một "shared secret" giống nhau mà server không biết được.
-/// 3. Dùng shared secret đó làm khóa AES-GCM để mã hóa/giải mã từng tin nhắn.
-/// Gợi ý package cho bước này: `cryptography` hoặc `pointycastle`.
+/// Mã hóa/giải mã tin nhắn bằng AES-256-GCM, với khóa được suy ra từ ECDH
+/// (X25519) giữa 2 thiết bị (xem KeyService). Đây là mã hóa đầu-cuối (E2EE)
+/// THẬT: khóa dùng để giải mã không bao giờ được lưu hay gửi lên Firestore
+/// hoặc bất kỳ server nào — chỉ tồn tại tạm thời trong bộ nhớ của từng thiết
+/// bị khi đang mở màn hình chat. Firestore chỉ lưu phần văn bản đã mã hóa
+/// (ciphertext), hoàn toàn vô nghĩa nếu không có khóa riêng tư của 1 trong 2
+/// người tham gia cuộc trò chuyện.
 class EncryptionService {
-  static enc.Key _deriveKey(String chatId) {
-    final hash = sha256.convert(utf8.encode('mini_chat_salt_$chatId'));
-    return enc.Key(Uint8List.fromList(hash.bytes));
+  static final AesGcm _algorithm = AesGcm.with256bits();
+
+  static Future<String> encryptText(String plainText, SecretKey key) async {
+    final nonce = _algorithm.newNonce();
+    final secretBox = await _algorithm.encrypt(
+      utf8.encode(plainText),
+      secretKey: key,
+      nonce: nonce,
+    );
+    final payload = {
+      'n': base64Encode(secretBox.nonce),
+      'c': base64Encode(secretBox.cipherText),
+      'm': base64Encode(secretBox.mac.bytes),
+    };
+    return base64Encode(utf8.encode(jsonEncode(payload)));
   }
 
-  static String encryptText(String plainText, String chatId) {
-    final key = _deriveKey(chatId);
-    final iv = enc.IV.fromSecureRandom(16);
-    final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
-    final encrypted = encrypter.encrypt(plainText, iv: iv);
-    return '${iv.base64}:${encrypted.base64}';
-  }
-
-  static String decryptText(String cipherPackage, String chatId) {
+  static Future<String> decryptText(String cipherPackage, SecretKey key) async {
     try {
-      final parts = cipherPackage.split(':');
-      if (parts.length != 2) return '[Không thể giải mã]';
-      final key = _deriveKey(chatId);
-      final iv = enc.IV.fromBase64(parts[0]);
-      final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
-      return encrypter.decrypt64(parts[1], iv: iv);
+      final payload = jsonDecode(utf8.decode(base64Decode(cipherPackage))) as Map;
+      final secretBox = SecretBox(
+        base64Decode(payload['c'] as String),
+        nonce: base64Decode(payload['n'] as String),
+        mac: Mac(base64Decode(payload['m'] as String)),
+      );
+      final clear = await _algorithm.decrypt(secretBox, secretKey: key);
+      return utf8.decode(clear);
     } catch (_) {
       return '[Không thể giải mã]';
     }
