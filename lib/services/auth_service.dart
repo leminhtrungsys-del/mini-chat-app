@@ -54,6 +54,28 @@ class AuthService {
     return null;
   }
 
+  /// Đặt lại mật khẩu mới cho một số điện thoại đã đăng ký.
+  /// LƯU Ý: Vì app chưa dùng Blaze (không có SMS OTP thật), bước này
+  /// chỉ xác minh số điện thoại đã tồn tại trong hệ thống rồi cho đặt
+  /// mật khẩu mới trực tiếp - không có xác thực OTP. Đây là giải pháp
+  /// tạm thời cho bản demo, không nên dùng cho ứng dụng thật.
+  Future<String?> resetPassword(String phone, String newPassword) async {
+    final id = _normalize(phone);
+    if (id.isEmpty) {
+      return 'Vui lòng nhập số điện thoại';
+    }
+    if (newPassword.isEmpty || newPassword.length < 4) {
+      return 'Mật khẩu mới phải có ít nhất 4 ký tự';
+    }
+    final docRef = _db.collection('users').doc(id);
+    final doc = await docRef.get();
+    if (!doc.exists) {
+      return 'Số điện thoại chưa được đăng ký';
+    }
+    await docRef.update({'password': newPassword});
+    return null;
+  }
+
   Future<void> _saveSession(String phone) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefsPhoneKey, phone);
