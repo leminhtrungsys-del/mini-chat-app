@@ -1,6 +1,4 @@
-// File này thường được TỰ ĐỘNG SINH RA khi bạn chạy lệnh `flutterfire configure`.
-// Nội dung placeholder dưới đây sẽ bị ghi đè - hãy chạy flutterfire configure
-// theo hướng dẫn trong README.md TRƯỚC KHI build ứng dụng thật.
+// File này được cập nhật với thông tin Firebase project thật (mini-chat-demo).
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
@@ -18,10 +16,10 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'THAY_BANG_API_KEY_CUA_BAN',
-    appId: 'THAY_BANG_APP_ID_CUA_BAN',
-    messagingSenderId: 'THAY_BANG_SENDER_ID',
-    projectId: 'THAY_BANG_PROJECT_ID',
-    storageBucket: 'THAY_BANG_PROJECT_ID.appspot.com',
+    apiKey: 'AIzaSyCdBNObTIxplRbRLglG7JmmZ_TCa_UHuo8',
+    appId: '1:1084260212587:android:474a0dc852c08d22d8b62e',
+    messagingSenderId: '1084260212587',
+    projectId: 'mini-chat-demo',
+    storageBucket: 'mini-chat-demo.firebasestorage.app',
   );
 }
