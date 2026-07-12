@@ -1,12 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_user.dart';
+import 'key_service.dart';
 
 /// Dịch vụ xác thực đơn giản dùng Firestore + SharedPreferences.
 /// LƯU Ý: Đây là giải pháp DEMO, mật khẩu lưu dạng plaintext trong Firestore.
 /// App thật cần dùng Firebase Auth hoặc hash mật khẩu (bcrypt/argon2) phía server.
 class AuthService {
   final _db = FirebaseFirestore.instance;
+  final _keyService = KeyService();
   static const _prefsPhoneKey = 'logged_in_phone';
 
   String _normalize(String phone) => phone.trim().replaceAll(RegExp(r'[^0-9+]'), '');
@@ -29,6 +31,8 @@ class AuthService {
       createdAt: DateTime.now(),
     );
     await docRef.set(user.toMap());
+    // Sinh cặp khóa E2EE cho thiết bị này và công bố public key lên Firestore.
+    await _keyService.ensurePublished(id);
     await _saveSession(id);
     return null; // null = thành công
   }
@@ -43,6 +47,9 @@ class AuthService {
     if (data['password'] != password) {
       return 'Mật khẩu không đúng';
     }
+    // Đảm bảo thiết bị này có khóa E2EE và public key đã được công bố
+    // (trường hợp đăng nhập lần đầu trên thiết bị mới).
+    await _keyService.ensurePublished(id);
     await _saveSession(id);
     return null;
   }
