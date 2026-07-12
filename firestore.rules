@@ -7,7 +7,10 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if true;
       allow create: if true;
-      allow update, delete: if false;
+      // allow update: cho phép cập nhật field publicKey (E2EE) khi đăng nhập
+      // trên thiết bị mới.
+      allow update: if true;
+      allow delete: if false;
     }
     match /chats/{chatId} {
       allow read, write: if true;
