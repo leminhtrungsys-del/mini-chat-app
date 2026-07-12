@@ -1,5 +1,5 @@
 name: mini_chat_app
-description: Ứng dụng chat demo với Flutter + Firebase Firestore
+description: Tchat - Ứng dụng chat E2EE với Flutter + Firebase Firestore
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -13,8 +13,7 @@ dependencies:
   firebase_core: ^3.6.0
   cloud_firestore: ^5.4.4
   shared_preferences: ^2.3.2
-  encrypt: ^5.0.3
-  crypto: ^3.0.5
+  cryptography: ^2.7.0
   intl: ^0.19.0
 
 dev_dependencies:
