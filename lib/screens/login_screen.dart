@@ -55,6 +55,17 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const Icon(Icons.chat_bubble_rounded, size: 64, color: AppColors.primary),
                 const SizedBox(height: 12),
+                const Text(
+                  'Tchat',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                ),
+                const Text(
+                  'Mã hóa đầu-cuối · Tự xóa tin nhắn',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.black54),
+                ),
+                const SizedBox(height: 20),
                 Text(
                   _isRegisterMode ? 'Tạo tài khoản' : 'Đăng nhập',
                   textAlign: TextAlign.center,
