@@ -35,14 +35,27 @@ jobs:
             sed -i 's/<string name="app_name">[^<]*<\/string>/<string name="app_name">Tchat<\/string>/' android/app/src/main/res/values/strings.xml
           fi
 
+      - name: Lower minSdkVersion for Android 8.1 (API 27) support
+        run: |
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i 's/minSdk = flutter\.minSdkVersion/minSdk = 21/' android/app/build.gradle.kts
+            sed -i 's/minSdk = [0-9]\+/minSdk = 21/' android/app/build.gradle.kts
+          fi
+          if [ -f android/app/build.gradle ]; then
+            sed -i 's/minSdkVersion flutter\.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
+            sed -i 's/minSdkVersion [0-9]\+/minSdkVersion 21/' android/app/build.gradle
+          fi
+          echo "----- build.gradle(.kts) after patch -----"
+          cat android/app/build.gradle.kts 2>/dev/null || cat android/app/build.gradle
+
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Build APK (release)
-        run: flutter build apk --release
+      - name: Build APK (release, split per ABI for smaller size on arm64 devices)
+        run: flutter build apk --release --split-per-abi
 
-      - name: Upload APK artifact
+      - name: Upload APK artifacts (all ABIs)
         uses: actions/upload-artifact@v4
         with:
           name: mini-chat-app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/*.apk
