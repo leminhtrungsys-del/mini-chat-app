@@ -28,6 +28,9 @@ jobs:
       - name: Generate missing platform folders (android/ios)
         run: flutter create . --platforms=android --org com.example
 
+      - name: Rebrand app label to Tchat
+        run: sed -i 's/android:label="[^"]*"/android:label="Tchat"/' android/app/src/main/AndroidManifest.xml
+
       - name: Get dependencies
         run: flutter pub get
 
