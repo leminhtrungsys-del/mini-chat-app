@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // CẢNH BÁO: Rule DEMO - cho phép đọc/ghi tự do để chạy thử nhanh.
+    // KHÔNG dùng nguyên bản này cho ứng dụng thật có dữ liệu người dùng thật,
+    // vì bất kỳ ai biết địa chỉ project cũng có thể đọc/ghi toàn bộ dữ liệu.
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if false;
+    }
+    match /chats/{chatId} {
+      allow read, write: if true;
+      match /messages/{messageId} {
+        allow read, write: if true;
+      }
+    }
+  }
+}
