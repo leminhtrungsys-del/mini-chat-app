@@ -46,6 +46,17 @@ jobs:
             sed -i 's/minSdkVersion [0-9]\+/minSdkVersion 21/' android/app/build.gradle
           fi
 
+      - name: Enable core library desugaring for flutter_local_notifications
+        run: |
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i 's/targetCompatibility = JavaVersion.VERSION_17/targetCompatibility = JavaVersion.VERSION_17\n        isCoreLibraryDesugaringEnabled = true/' android/app/build.gradle.kts
+            printf '\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n}\n' >> android/app/build.gradle.kts
+          fi
+          if [ -f android/app/build.gradle ]; then
+            sed -i 's/targetCompatibility JavaVersion.VERSION_17/targetCompatibility JavaVersion.VERSION_17\n        coreLibraryDesugaringEnabled true/' android/app/build.gradle
+            printf "\ndependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'\n}\n" >> android/app/build.gradle
+          fi
+
       - name: Add notification permission
         run: |
           sed -i '/<manifest /a\    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' android/app/src/main/AndroidManifest.xml
