@@ -45,17 +45,28 @@ jobs:
             sed -i 's/minSdkVersion flutter\.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
             sed -i 's/minSdkVersion [0-9]\+/minSdkVersion 21/' android/app/build.gradle
           fi
-          echo "----- build.gradle(.kts) after patch -----"
-          cat android/app/build.gradle.kts 2>/dev/null || cat android/app/build.gradle
+
+      - name: Add notification permission
+        run: |
+          sed -i '/<manifest /a\    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' android/app/src/main/AndroidManifest.xml
 
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Build APK (release, split per ABI for smaller size on arm64 devices)
-        run: flutter build apk --release --split-per-abi
+      - name: Build APK (normal Android - universal, all ABIs)
+        run: flutter build apk --release
+      - name: Rename universal APK
+        run: cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/Tchat-Android-thuong.apk
 
-      - name: Upload APK artifacts (all ABIs)
+      - name: Build APK (KEY2 LE - arm64 only, smaller size)
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi
+      - name: Rename KEY2 LE APK
+        run: cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/Tchat-KEY2LE.apk
+
+      - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mini-chat-app-release-apk
-          path: build/app/outputs/flutter-apk/*.apk
+          path: |
+            build/app/outputs/flutter-apk/Tchat-Android-thuong.apk
+            build/app/outputs/flutter-apk/Tchat-KEY2LE.apk
