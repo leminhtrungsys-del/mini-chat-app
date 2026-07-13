@@ -5,8 +5,27 @@ class ChatBubble extends StatelessWidget {
   final String text;
   final bool isMe;
   final String time;
+  final DateTime? deliveredAt;
+  final DateTime? readAt;
 
-  const ChatBubble({super.key, required this.text, required this.isMe, required this.time});
+  const ChatBubble({
+    super.key,
+    required this.text,
+    required this.isMe,
+    required this.time,
+    this.deliveredAt,
+    this.readAt,
+  });
+
+  Widget _statusIcon() {
+    if (readAt != null) {
+      return const Icon(Icons.done_all, size: 14, color: Colors.lightBlueAccent);
+    }
+    if (deliveredAt != null) {
+      return const Icon(Icons.done_all, size: 14, color: Colors.white70);
+    }
+    return const Icon(Icons.done, size: 14, color: Colors.white70);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,12 +53,21 @@ class ChatBubble extends StatelessWidget {
               style: TextStyle(color: isMe ? Colors.white : Colors.black87, fontSize: 15),
             ),
             const SizedBox(height: 4),
-            Text(
-              time,
-              style: TextStyle(
-                fontSize: 10,
-                color: isMe ? Colors.white70 : Colors.black45,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  time,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isMe ? Colors.white70 : Colors.black45,
+                  ),
+                ),
+                if (isMe) ...[
+                  const SizedBox(width: 4),
+                  _statusIcon(),
+                ],
+              ],
             ),
           ],
         ),
