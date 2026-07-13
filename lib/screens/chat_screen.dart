@@ -3,6 +3,7 @@ import 'package:cryptography/cryptography.dart';
 import '../services/chat_service.dart';
 import '../services/encryption_service.dart';
 import '../services/key_service.dart';
+import '../services/notification_service.dart';
 import '../models/message_model.dart';
 import '../utils/constants.dart';
 import '../widgets/chat_bubble.dart';
@@ -34,7 +35,17 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    // Đang mở đúng cuộc trò chuyện này -> tạm ẩn thông báo hệ thống cho nó.
+    NotificationService.currentOpenChatId = widget.chatId;
     _loadSharedKey();
+  }
+
+  @override
+  void dispose() {
+    if (NotificationService.currentOpenChatId == widget.chatId) {
+      NotificationService.currentOpenChatId = null;
+    }
+    super.dispose();
   }
 
   Future<void> _loadSharedKey() async {
@@ -77,7 +88,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Icon(Icons.lock, size: 12, color: Colors.black45),
                 SizedBox(width: 4),
                 Text(
-                  'Mã hóa đầu-cuối (E2EE) · Tự xóa sau 30 phút',
+                  'E2EE · Khóa 30p sau khi xem · Xóa cứng sau 24h',
                   style: TextStyle(fontSize: 11, color: Colors.black45),
                 ),
               ],
@@ -111,6 +122,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       if (_sharedKey == null) {
                         return const Center(child: Text('Chưa thể giải mã tin nhắn.'));
                       }
+                      // Đang xem trực tiếp -> đánh dấu tin của đối phương là
+                      // "đã xem" và rút ngắn thời gian tồn tại còn 30 phút.
+                      _chatService.markRead(widget.chatId, rawMessages, widget.myPhone);
                       return FutureBuilder<List<_DecryptedMessage>>(
                         future: _decryptAll(rawMessages, _sharedKey!),
                         builder: (context, decryptedSnap) {
@@ -127,7 +141,13 @@ class _ChatScreenState extends State<ChatScreen> {
                               final isMe = m.senderId == widget.myPhone;
                               final time =
                                   '${m.sentAt.hour.toString().padLeft(2, '0')}:${m.sentAt.minute.toString().padLeft(2, '0')}';
-                              return ChatBubble(text: m.plainText, isMe: isMe, time: time);
+                              return ChatBubble(
+                                text: m.plainText,
+                                isMe: isMe,
+                                time: time,
+                                deliveredAt: m.deliveredAt,
+                                readAt: m.readAt,
+                              );
                             },
                           );
                         },
@@ -180,7 +200,13 @@ class _ChatScreenState extends State<ChatScreen> {
     final result = <_DecryptedMessage>[];
     for (final m in raw) {
       final plain = await EncryptionService.decryptText(m.cipherText, key);
-      result.add(_DecryptedMessage(senderId: m.senderId, plainText: plain, sentAt: m.sentAt));
+      result.add(_DecryptedMessage(
+        senderId: m.senderId,
+        plainText: plain,
+        sentAt: m.sentAt,
+        deliveredAt: m.deliveredAt,
+        readAt: m.readAt,
+      ));
     }
     return result;
   }
@@ -190,6 +216,14 @@ class _DecryptedMessage {
   final String senderId;
   final String plainText;
   final DateTime sentAt;
+  final DateTime? deliveredAt;
+  final DateTime? readAt;
 
-  _DecryptedMessage({required this.senderId, required this.plainText, required this.sentAt});
+  _DecryptedMessage({
+    required this.senderId,
+    required this.plainText,
+    required this.sentAt,
+    this.deliveredAt,
+    this.readAt,
+  });
 }
