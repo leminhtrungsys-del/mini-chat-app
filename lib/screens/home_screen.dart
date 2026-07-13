@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/chat_service.dart';
+import '../services/notification_service.dart';
 import '../models/chat_model.dart';
 import '../utils/constants.dart';
 import '../widgets/chat_tile.dart';
@@ -26,6 +27,12 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadSession();
   }
 
+  @override
+  void dispose() {
+    NotificationService.instance.stopListening();
+    super.dispose();
+  }
+
   Future<void> _loadSession() async {
     final phone = await _auth.getSessionPhone();
     if (phone == null) {
@@ -36,9 +43,13 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     setState(() => _myPhone = phone);
+    // Bắt đầu theo dõi tin nhắn mới trên mọi cuộc trò chuyện để hiện
+    // thông báo hệ thống (chỉ hoạt động khi app đang chạy).
+    await NotificationService.instance.startListening(phone);
   }
 
   Future<void> _logout() async {
+    await NotificationService.instance.stopListening();
     await _auth.logout();
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
